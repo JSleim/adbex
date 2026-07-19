@@ -1,0 +1,18 @@
+{
+  "name": "adbex",
+  "version": "1.0.0",
+  "author": "JSleim",
+  "description": "A friendlier ADB wrapper - glob pulls, APK extraction, screenshots, backups and more",
+  "main": "src/index.js",
+  "bin": {
+    "adbex": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": ["adb", "android", "cli", "file-transfer", "apk"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  }
+}
