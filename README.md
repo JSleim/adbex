@@ -23,8 +23,13 @@ Requires `adb` to be installed and on your PATH (part of [Android Platform Tools
 | `adbex install <file\|glob...>` | Install one or more APKs; supports wildcards like `*.apk` |
 | `adbex devices` | List connected devices with friendly info |
 | `adbex select` | Pick a default device (saved to `~/.adbex.json`) |
-| `adbex packages [filter]` | List packages; filter by name, `-3` for third-party, `-s` for system |
+| `adbex packages [filter] [-3] [-s] [--all] [-n]` | List user apps by default (`-3`); `-s` shows system apps, `--all` shows both, `-n` includes names |
 | `adbex logcat [package]` | Stream logcat for a package; auto-resolves its PID |
+| `adbex launch <package\|app name> [-s] [-n]` | Launch an app by package or exact installed app name |
+| `adbex exit <package\|app name>` | Force-stop an app by package or exact installed app name |
+| `adbex alias [list]` | List custom command aliases |
+| `adbex alias set <name> <command> [args...]` | Create a persistent alias for an adbex command |
+| `adbex alias delete <name>` | Delete a custom command alias |
 
 Any command adbex doesn't recognize is passed directly to `adb`:
 
@@ -68,12 +73,35 @@ adbex restore ./backup-com.example.app --data
 # Pull the APK for an installed app
 adbex apk-pull com.example.app
 
+# List packages with their app names
+adbex packages -n
+
+# Include system packages too, or show only system packages
+adbex packages --all
+adbex packages -s
+
 # Watch logs for a specific app
 adbex logcat com.example.app
+
+# Launch by app name, with or without quotes around names containing spaces
+adbex launch Genshin Impact
+adbex launch "YouTube"
+
+# Force-stop an app by name or package
+adbex exit "YouTube"
+
+# Create and use a command alias
+adbex alias set l launch
+adbex l "YouTube"
+adbex alias list
+adbex alias delete l
 
 # Use a specific device for one command
 adbex -d emulator-5554 screenshot
 ```
+
+Aliases are stored in `~/.adbex.json` alongside the selected device. They expand
+to adbex commands (not shell commands), and any extra arguments are passed through.
 
 ## License
 

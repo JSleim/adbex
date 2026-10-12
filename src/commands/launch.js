@@ -1,4 +1,5 @@
 const { execFileSync } = require('child_process');
+const { resolveAppName } = require('../app-labels');
 
 function adb(args, verbose) {
   if (verbose) console.error(`[adbex] adb ${args.join(' ')}`);
@@ -30,19 +31,34 @@ function resolveActivity(pkg, verbose) {
   return null;
 }
 
+function errorText(err) {
+  return (err.stderr || err.message || '').toString().trim();
+}
+
 module.exports = function launch(args, { verbose } = {}) {
   const flags = args.filter(a => a.startsWith('-'));
-  const pkg = args.filter(a => !a.startsWith('-'))[0];
+  const target = args.filter(a => !a.startsWith('-')).join(' ');
 
-  if (!pkg) {
-    console.error('Usage: adbex launch <package> [-s] [-n]');
+  if (!target) {
+    console.error('Usage: adbex launch <package|app name...> [-s] [-n]');
     console.error('  -s  force-stop the app before launching');
     console.error('  -n  only print the resolved activity, do not launch');
     console.error('Example: adbex launch com.zy.wqmt.global');
     process.exit(1);
   }
 
-  const component = resolveActivity(pkg, verbose);
+  let pkg = target;
+  let component = resolveActivity(pkg, verbose);
+
+  if (!component && !/^[\w$]+(?:\.[\w$]+)+$/.test(target)) {
+    try {
+      pkg = resolveAppName(target, verbose);
+    } catch (err) {
+      console.error(`Failed to look up app name "${target}": ${errorText(err) || 'is a device connected?'}`);
+      process.exit(1);
+    }
+    component = resolveActivity(pkg, verbose);
+  }
 
   if (flags.includes('-n')) {
     if (!component) {
@@ -84,7 +100,7 @@ module.exports = function launch(args, { verbose } = {}) {
     }
     console.log('Started.');
   } catch (err) {
-    const msg = (err.stderr || err.message || '').toString().trim();
+    const msg = errorText(err);
     console.error(`Failed to launch "${pkg}": ${msg || 'is a device connected?'}`);
     process.exit(1);
   }

@@ -13,6 +13,8 @@ const restore = require('./commands/restore');
 const install = require('./commands/install');
 const push = require('./commands/push');
 const launch = require('./commands/launch');
+const exit = require('./commands/exit');
+const alias = require('./commands/alias');
 
 const COMMANDS = {
   'pull': pull,
@@ -27,10 +29,13 @@ const COMMANDS = {
   'select': select,
   'logcat': logcat,
   'launch': launch,
+  'exit': exit,
+  'alias': alias,
 };
 
 const { load: loadConfig } = require('./config');
-const { selectedDevice } = loadConfig();
+const config = loadConfig();
+const { selectedDevice } = config;
 if (selectedDevice) {
   process.env.ANDROID_SERIAL = selectedDevice;
 }
@@ -59,7 +64,19 @@ if (cmd === '--help' || cmd === '-h') {
 }
 
 if (COMMANDS[cmd]) {
-  COMMANDS[cmd](cleanArgs.slice(1), { verbose });
+  COMMANDS[cmd](cleanArgs.slice(1), { verbose, commands: Object.keys(COMMANDS) });
+} else if (config.aliases && Object.prototype.hasOwnProperty.call(config.aliases, cmd)) {
+  const aliasArgs = config.aliases[cmd];
+  if (!Array.isArray(aliasArgs) || aliasArgs.length === 0 || !aliasArgs.every(arg => typeof arg === 'string')) {
+    console.error(`Alias "${cmd}" is invalid in ~/.adbex.json.`);
+    process.exit(1);
+  }
+  const [aliasCommand, ...presetArgs] = aliasArgs;
+  if (!COMMANDS[aliasCommand] || aliasCommand === 'alias') {
+    console.error(`Alias "${cmd}" targets an unknown adbex command: "${aliasCommand}".`);
+    process.exit(1);
+  }
+  COMMANDS[aliasCommand]([...presetArgs, ...cleanArgs.slice(1)], { verbose, commands: Object.keys(COMMANDS) });
 } else {
   if (verbose) console.error(`[adbex] passing through to adb: adb ${args.join(' ')}`);
   const result = spawnSync('adb', args, { stdio: 'inherit' });
@@ -80,9 +97,13 @@ ADBEX COMMANDS:
   install <file|glob...>        Install APK(s), supports wildcards like *.apk
   devices                       List devices with friendly info
   select                        Select default device (saves to ~/.adbex.json)
-  packages [filter] [-3] [-s]   List installed packages, optionally filtered
+  packages [filter] [-3] [-s] [--all] [-n]  List apps; -n includes names
   logcat [package]               Logcat for package (auto-resolves PID)
-  launch <package> [-s] [-n]    Resolve launcher activity and start the app
+  launch <package|app name> [-s] [-n]  Resolve and start an app
+  exit <package|app name>       Force-stop an app
+  alias [list]                  List custom command aliases
+  alias set <name> <command>    Create an alias for an adbex command
+  alias delete <name>           Delete a custom alias
 
 FLAGS:
   -v, --verbose                 Show what adbex is doing under the hood
