@@ -12,6 +12,7 @@ const logcat = require('./commands/logcat');
 const restore = require('./commands/restore');
 const install = require('./commands/install');
 const push = require('./commands/push');
+const launch = require('./commands/launch');
 
 const COMMANDS = {
   'pull': pull,
@@ -25,6 +26,7 @@ const COMMANDS = {
   'packages': packages,
   'select': select,
   'logcat': logcat,
+  'launch': launch,
 };
 
 const { load: loadConfig } = require('./config');
@@ -80,6 +82,7 @@ ADBEX COMMANDS:
   select                        Select default device (saves to ~/.adbex.json)
   packages [filter] [-3] [-s]   List installed packages, optionally filtered
   logcat [package]               Logcat for package (auto-resolves PID)
+  launch <package> [-s] [-n]    Resolve launcher activity and start the app
 
 FLAGS:
   -v, --verbose                 Show what adbex is doing under the hood
